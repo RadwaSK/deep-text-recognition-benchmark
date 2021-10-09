@@ -1,6 +1,6 @@
 """ a modified version of CRNN torch repository https://github.com/bgshih/crnn/blob/master/tool/create_dataset.py """
 
-import fire
+# import fire
 import os
 import lmdb
 import cv2
@@ -43,6 +43,7 @@ def createDataset(inputPath, gtFile, outputPath, checkValid=True):
         datalist = data.readlines()
 
     nSamples = len(datalist)
+    errors = 0
     for i in range(nSamples):
         imagePath, label = datalist[i].strip('\n').split('\t')
         imagePath = os.path.join(inputPath, imagePath)
@@ -54,8 +55,15 @@ def createDataset(inputPath, gtFile, outputPath, checkValid=True):
         if not os.path.exists(imagePath):
             print('%s does not exist' % imagePath)
             continue
-        with open(imagePath, 'rb') as f:
-            imageBin = f.read()
+
+        try:
+            with open(imagePath, 'rb') as f:
+                imageBin = f.read()
+        except:
+            print('error reading image')
+            errors += 1
+            continue
+
         if checkValid:
             try:
                 if not checkImageIsValid(imageBin):
@@ -78,10 +86,12 @@ def createDataset(inputPath, gtFile, outputPath, checkValid=True):
             print('Written %d / %d' % (cnt, nSamples))
         cnt += 1
     nSamples = cnt-1
+    print('Total corrupted images:', errors)
     cache['num-samples'.encode()] = str(nSamples).encode()
     writeCache(env, cache)
     print('Created dataset with %d samples' % nSamples)
 
 
 if __name__ == '__main__':
-    fire.Fire(createDataset)
+    # fire.Fire(createDataset)
+    createDataset('', 'dataset/valid_labels.txt', 'dataset/lmdb_dataset/valid')
